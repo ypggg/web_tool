@@ -142,6 +142,15 @@
             display: none;
         }
 
+        .submit-error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
         .guidelines {
             background: #f8f9fa;
             padding: 20px;
@@ -184,6 +193,10 @@
 
         <div class="success-message" id="successMessage">
             <i class="fas fa-check-circle"></i> 提交成功！我们会尽快审核您的网站。
+        </div>
+
+        <div class="submit-error-message" id="submitErrorMessage">
+            <i class="fas fa-exclamation-circle"></i> 提交失败，请稍后重试，或直接联系我们。
         </div>
 
         <div class="guidelines">
@@ -284,6 +297,13 @@
 
     <script src="./assets/js/jquery.min-3.2.1.js"></script>
     <script>
+        // ============================================================
+        // 请将下面这行替换成你自己的 Formspree 表单地址
+        // 去 https://formspree.io 免费注册并创建一个表单后即可获得
+        // 格式类似：https://formspree.io/f/xxxxabcd
+        // ============================================================
+        const SUBMIT_URL = 'https://formspree.io/f/mnpagjrd';
+
         $(document).ready(function() {
             // 描述字数统计
             $('#description').on('input', function() {
@@ -352,6 +372,10 @@
                     return;
                 }
 
+                // 隐藏之前的提示
+                $('#successMessage').hide();
+                $('#submitErrorMessage').hide();
+
                 // 禁用提交按钮
                 const $submitBtn = $('#submitBtn');
                 $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> 提交中...');
@@ -368,6 +392,31 @@
                     submitTime: new Date().toISOString()
                 };
 
+                // 提交到 Formspree（Formspree 要求 Accept: application/json 才会返回 JSON 结果）
+                $.ajax({
+                    url: SUBMIT_URL,
+                    method: 'POST',
+                    data: JSON.stringify(formData),
+                    contentType: 'application/json',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    success: function(response) {
+                        // 提交成功，显示成功提示并重置表单
+                        $('#successMessage').show();
+                        $('#submitForm')[0].reset();
+                        $('#descCount').text('0');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    },
+                    error: function(xhr) {
+                        // 提交失败，显示错误提示
+                        $('#submitErrorMessage').show();
+                        console.error('提交失败：', xhr.responseText);
+                    },
+                    complete: function() {
+                        $submitBtn.prop('disabled', false).html('<i class="fas fa-paper-plane"></i> 提交网站');
+                    }
+                });
             });
 
             // 输入时移除错误状态
